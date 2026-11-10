@@ -5,6 +5,7 @@ import { dirname, resolve, relative, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { initialize, ParseError } from "../dist/index.js";
+import { preprocess } from "../dist/preprocess.js";
 const here=dirname(fileURLToPath(import.meta.url));
 const pin=JSON.parse(readFileSync(resolve(here,"corpus-pin.json"),"utf8"));
 const root=process.argv[2];if(!root)throw new Error("Pass the pinned plurimath-testsuite checkout path");
@@ -40,7 +41,12 @@ for(const payload of provenance.payloads){
  for(const row of doc.cases){
   if(count>=limit)break;count++;
   try{
-   let actual,error;try{actual=stage.parseTree(row.input.str,row.options);}catch(e){error=e;}
+   let actual,error;
+   // The frozen Unicode RawParser boundary reports positions in prepared
+   // grammar text. Public parseTree positions intentionally refer to input.
+   const prepared=pin.refusal_offset_basis==="preprocessed"?preprocess(row.input.str):null;
+   if(prepared&&row.expected.preprocessed)assert.equal(prepared.text,row.expected.preprocessed.str);
+   try{actual=prepared?stage.parsePreparedTree(prepared.text,row.options):stage.parseTree(row.input.str,row.options);}catch(e){error=e;}
    if(row.expected.refusal){assert.ok(error,"expected parse refusal");assert.equal(row.expected.refusal.category,"parse_error");assert.ok(error instanceof ParseError);assert.equal(error.byteOffset,row.expected.refusal.byte_offset);}
    else{if(error)throw error;assert.deepEqual(actual,value(row.expected.tree));}
   }catch(e){failures.push({id:row.id,input:row.input.str,error:String(e).slice(0,700)});}
