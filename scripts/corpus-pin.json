@@ -1,0 +1,11 @@
+{
+  "language": "unicode",
+  "generation": 4,
+  "path": "stages/unicode/generations/000004",
+  "snapshot_digest": "sha256:cc02870fb6ee5a46c64271733b716f00469d0af46847851ad3db9249ad2571ed",
+  "provenance_sha256": "61a4bd545cfff46dee3df2cf4ca1299c7658bf228dd183dd1b7a43abd3ceec91",
+  "repository": "https://github.com/plurimath/plurimath-testsuite",
+  "revision": "0d50db714d75e3883a507fbc47022eb547fb027f",
+  "refusal_offset_basis": "preprocessed",
+  "api": "RawParser prepared grammar boundary"
+}
