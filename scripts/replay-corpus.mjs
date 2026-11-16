@@ -2,8 +2,7 @@
 // package.
 //
 //   node scripts/replay-corpus.mjs <testsuite-checkout> [--pin FILE]
-//     [--limit N] [--group NAME[,NAME...]] [--expected FILE] [--report FILE]
-//     [--executed FILE]
+//     [--limit N] [--group NAME[,NAME...]] [--report FILE] [--executed FILE]
 //
 // --pin names a pin file in scripts/ (default corpus-pin.json). Before any row
 // runs, the generation's files must hash to the pinned snapshot digest and
@@ -14,12 +13,7 @@
 // Parser.parse and the generated model is compared field by field with the
 // Ruby model wire the row records (or the refusal offset). Legacy-oracle
 // payloads are counted and not run. A full run must execute exactly the pinned
-// row IDs of each boundary.
-//
-// --expected names a JSON file in scripts/ listing known divergences, as
-// {"rows": {"<row id>": "<reason>"}}. A listed row still runs and is reported
-// under expected_divergences; an unlisted failure, or a listed row that now
-// passes or was not executed by a complete run, fails the replay. UMATH_TS_DIST replays an installed package's dist
+// row IDs of each boundary, and any failing row fails the replay. UMATH_TS_DIST replays an installed package's dist
 // (for example an unpacked `npm pack` tarball) instead of the build tree.
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
@@ -36,7 +30,6 @@ const { values: args, positionals } = parseArgs({
     pin: { type: "string", default: "corpus-pin.json" },
     limit: { type: "string" },
     group: { type: "string" },
-    expected: { type: "string" },
     report: { type: "string" },
     executed: { type: "string" },
   },
@@ -47,7 +40,6 @@ const limit = args.limit === undefined ? Infinity : Number(args.limit);
 if (!(limit > 0)) throw new Error("--limit must be positive");
 const groups = args.group === undefined ? null : new Set(args.group.split(",").map((g) => g + ".yaml"));
 const partial = limit !== Infinity || groups !== null;
-const known = args.expected ? JSON.parse(readFileSync(resolve(here, args.expected), "utf8")).rows : {};
 
 const dist = resolve(process.env.UMATH_TS_DIST ?? resolve(here, "../dist"));
 const { initialize, ParseError } = await import(pathToFileURL(resolve(dist, "index.js")).href);
@@ -180,8 +172,6 @@ const ids = {};
 const nesting = {};
 let count = 0;
 let skippedPayloads = 0;
-const divergences = [];
-const unexpectedPasses = [];
 const timings = [];
 for (const payload of provenance.payloads) {
   const name = payload.path.split("/").pop();
@@ -208,11 +198,8 @@ for (const payload of provenance.payloads) {
     try {
       if (boundary === "typed-model") typedRow(row);
       else rawRow(row);
-      if (Object.hasOwn(known, row.id)) unexpectedPasses.push(row.id);
     } catch (e) {
-      const failure = { id: row.id, boundary, input: row.input.str, error: String(e).slice(0, 900) };
-      if (Object.hasOwn(known, row.id)) divergences.push({ ...failure, reason: known[row.id] });
-      else failures.push(failure);
+      failures.push({ id: row.id, boundary, input: row.input.str, error: String(e).slice(0, 900) });
     } finally {
       timings.push([row.id, Math.round(performance.now() - started)]);
     }
@@ -230,11 +217,6 @@ if (pin.boundaries && !partial) {
     if (expected.max_nesting !== undefined) assert.equal(nesting[boundary], expected.max_nesting, `${boundary}: deepest expected tree`);
   }
 }
-for (const id of unexpectedPasses) failures.push({ id, error: "listed as an expected divergence but now passes; remove it from --expected" });
-if (!partial) {
-  const executed = new Set(Object.values(ids).flat());
-  for (const id of Object.keys(known)) if (!executed.has(id)) failures.push({ id, error: "listed as an expected divergence but not executed" });
-}
 timings.sort((a, b) => b[1] - a[1]);
 const report = {
   language: pin.language,
@@ -247,17 +229,14 @@ const report = {
   executed: Object.fromEntries(Object.entries(ids).map(([b, v]) => [b, v.length])),
   max_nesting: nesting,
   legacy_payloads_not_run: skippedPayloads,
-  expected_divergences: divergences.length,
-  expected_divergence_ids: divergences.map((f) => f.id),
   failed: failures.length,
   failed_ids: failures.map((f) => f.id),
   failures,
-  divergences,
   slowest_ms: timings.slice(0, 10),
   total_row_ms: timings.reduce((sum, [, ms]) => sum + ms, 0),
 };
 if (args.report) writeFileSync(args.report, JSON.stringify(report, null, 1));
 if (args.executed) writeFileSync(args.executed, Object.values(ids).flat().join("\n") + "\n");
 const brief = (list) => list.slice(0, 20).map((f) => ({ id: f.id, error: f.error.slice(0, 300) }));
-console.log(JSON.stringify({ ...report, failures: brief(failures), divergences: brief(divergences) }));
+console.log(JSON.stringify({ ...report, failures: brief(failures) }));
 process.exitCode = failures.length ? 1 : 0;

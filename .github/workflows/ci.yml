@@ -35,8 +35,7 @@ jobs:
       - run: npm pack --ignore-scripts
   # Unicode generation 5: the 72 generation-4 rows plus the 675 external
   # UnicodeMath rows, replayed raw-tree and typed-model through the packed
-  # tarball installed into a clean consumer. Known divergences are listed in
-  # scripts/corpus-divergences-5.json; they still run and are reported.
+  # tarball installed into a clean consumer. Every row must match.
   unicode-generation-5:
     strategy:
       fail-fast: false
@@ -71,7 +70,7 @@ jobs:
         env:
           UMATH_TS_DIST: ${{ runner.temp }}/consumer/node_modules/@plurimath/umath-ts/dist
         run: >
-          npm run test:corpus -- .corpus5 --pin corpus-pin-5.json --expected corpus-divergences-5.json
+          npm run test:corpus -- .corpus5 --pin corpus-pin-5.json
           --report "$RUNNER_TEMP/replay-5.json" --executed "$RUNNER_TEMP/executed-5.txt"
       - uses: ruby/setup-ruby@v1
         if: ${{ !cancelled() }}
