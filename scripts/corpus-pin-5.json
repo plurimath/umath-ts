@@ -1,0 +1,21 @@
+{
+  "repository": "https://github.com/plurimath/plurimath-testsuite",
+  "revision": "acbdf0319dfb9bc49c1726bdbdedac276476e9b5",
+  "language": "unicode",
+  "generation": 5,
+  "path": "stages/unicode/generations/000005",
+  "snapshot_digest": "sha256:282fb3eead874618dda3229320a3a5d061434ea3766c8c95c641e07d49444b10",
+  "provenance_sha256": "a492aad8166277de3196c6cea7fe632eb0ce3900541d8dad7a7d71e1f7b96f70",
+  "boundaries": {
+    "raw-tree": {
+      "rows": 747,
+      "ids_sha256": "a49589cbb943c9e90b7bc04d9c646c78fa2c4a5dec94957c9aab179542377be8"
+    },
+    "typed-model": {
+      "rows": 747,
+      "ids_sha256": "5436820731bf25e831aa2c457d0f2e16d62030349abe95b6f1153d40eee5d182"
+    }
+  },
+  "refusal_offset_basis": "preprocessed",
+  "api": "RawParser prepared grammar boundary (raw-tree); Parser.parse typed model (typed-model)"
+}

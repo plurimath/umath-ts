@@ -11,7 +11,7 @@
     "check:artifacts": "node scripts/verify-artifacts.mjs",
     "test": "node --test test/*.test.mjs",
     "prepare": "npm run build",
-    "test:corpus:raw": "node scripts/replay-raw-corpus.mjs"
+    "test:corpus": "node scripts/replay-corpus.mjs"
   },
   "dependencies": {
     "parsanol": "git+https://github.com/suleman-uzair/parsanol-ts.git#4c61875d96937ed228d5344de70beb7999388e2e"
