@@ -14,7 +14,7 @@
     "test:corpus": "node scripts/replay-corpus.mjs"
   },
   "dependencies": {
-    "parsanol": "git+https://github.com/suleman-uzair/parsanol-ts.git#4c61875d96937ed228d5344de70beb7999388e2e"
+    "parsanol": "git+https://github.com/suleman-uzair/parsanol-ts.git#f9da97d728d14eb4717ff2d908b33e176b739af6"
   },
   "devDependencies": {
     "@types/node": "22.20.5",
@@ -35,7 +35,7 @@
     "data/"
   ],
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12"
   },
   "exports": {
     ".": {

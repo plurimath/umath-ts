@@ -2,11 +2,19 @@
 // package.
 //
 //   node scripts/replay-corpus.mjs <testsuite-checkout> [--pin FILE]
-//     [--limit N] [--group NAME[,NAME...]] [--report FILE] [--executed FILE]
+//     [--limit N] [--group NAME[,NAME...]] [--compatibility strict|parslet]
+//     [--reporter default|deepest]
+//     [--report FILE] [--executed FILE]
 //
 // --pin names a pin file in scripts/ (default corpus-pin.json). Before any row
 // runs, the generation's files must hash to the pinned snapshot digest and
 // provenance, and each payload to its recorded size and SHA-256.
+//
+// --compatibility selects the parser policy every row runs under (default
+// strict). The Ruby producer parses with Parslet semantics, so replaying its
+// goldens uses the explicit `parslet` policy. --reporter selects the failure
+// reporter for refusals (default `default`); the Ruby engine reports the
+// deepest failure, so its goldens use `deepest`.
 //
 // raw-tree rows go through the prepared grammar boundary and are compared as
 // whole raw trees (or refusal offsets). typed-model rows go through
@@ -32,6 +40,8 @@ const { values: args, positionals } = parseArgs({
     group: { type: "string" },
     report: { type: "string" },
     executed: { type: "string" },
+    compatibility: { type: "string", default: "strict" },
+    reporter: { type: "string", default: "default" },
   },
 });
 const root = positionals[0];
@@ -45,6 +55,9 @@ const dist = resolve(process.env.UMATH_TS_DIST ?? resolve(here, "../dist"));
 const { initialize, ParseError } = await import(pathToFileURL(resolve(dist, "index.js")).href);
 const { preprocess } = await import(pathToFileURL(resolve(dist, "preprocess.js")).href);
 
+assert.ok(["strict", "parslet"].includes(args.compatibility), "--compatibility must be strict or parslet");
+assert.ok(["default", "deepest"].includes(args.reporter), "--reporter must be default or deepest");
+const policy = (options) => ({ ...options, compatibility: args.compatibility, reporter: args.reporter });
 const pin = JSON.parse(readFileSync(resolve(here, args.pin), "utf8"));
 const generation = resolve(root, pin.path);
 const sha = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -133,7 +146,7 @@ function sameTree(actual, expected) {
 // Typed refusals report byte offsets into the caller's input.
 function typedRow(row) {
   let actual, error;
-  try { actual = stage.parse(row.input.str, row.options); } catch (e) { error = e; }
+  try { actual = stage.parse(row.input.str, policy(row.options)); } catch (e) { error = e; }
   if (row.expected.refusal) {
     assert.ok(error, "expected parse refusal");
     assert.ok(error instanceof ParseError, String(error));
@@ -150,7 +163,7 @@ function rawRow(row) {
   const prepared = pin.refusal_offset_basis === "preprocessed" ? preprocess(row.input.str) : null;
   if (prepared && row.expected.preprocessed) assert.equal(prepared.text, row.expected.preprocessed.str);
   try {
-    actual = prepared ? stage.parsePreparedTree(prepared.text, row.options) : stage.parseTree(row.input.str, row.options);
+    actual = prepared ? stage.parsePreparedTree(prepared.text, policy(row.options)) : stage.parseTree(row.input.str, policy(row.options));
   } catch (e) { error = e; }
   if (row.expected.refusal) {
     assert.ok(error, "expected parse refusal");
@@ -219,6 +232,8 @@ if (pin.boundaries && !partial) {
 }
 timings.sort((a, b) => b[1] - a[1]);
 const report = {
+  compatibility: args.compatibility,
+  reporter: args.reporter,
   language: pin.language,
   generation: pin.generation,
   revision: pin.revision,
