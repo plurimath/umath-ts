@@ -14,7 +14,16 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-latest, windows-latest]
-        node: [22, 24]
+        node: ['22.0.0', 24]
+        # On the Windows image, npm 10.5 bundled with Node 22.0.0 looks for
+        # its CLI under the image's global prefix (C:\npm\prefix) and fails
+        # before running anything; Windows covers the current Node 22 line.
+        exclude:
+          - os: windows-latest
+            node: '22.0.0'
+        include:
+          - os: windows-latest
+            node: 22
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
@@ -33,6 +42,33 @@ jobs:
           path: .corpus
       - run: npm run test:corpus -- .corpus --compatibility parslet --reporter deepest
       - run: npm pack --ignore-scripts
+  # The engines contract is Node >= 22: install the packed tarball into a
+  # clean consumer and parse through the package on the oldest supported
+  # and the current Node.
+  packed-node:
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22.0.0', 24]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm install --ignore-scripts
+      - run: npm run build
+      - name: Install the tarball into a clean consumer and parse
+        run: |
+          node --version
+          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP"
+          mkdir "$RUNNER_TEMP/consumer"
+          cp scripts/check-packed-node.mjs "$RUNNER_TEMP/consumer/"
+          cd "$RUNNER_TEMP/consumer"
+          echo '{"name":"consumer","private":true,"type":"module"}' > package.json
+          npm install --no-audit --no-fund ../plurimath-umath-ts-*.tgz
+          node check-packed-node.mjs
   # Unicode generation 5: the 72 generation-4 rows plus the 675 external
   # UnicodeMath rows, replayed raw-tree and typed-model through the packed
   # tarball installed into a clean consumer. Every row must match. The
