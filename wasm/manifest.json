@@ -1,0 +1,20 @@
+{
+  "repository": "plurimath/umath-rs",
+  "revision": "10e48d115935956e0919606059528491a80c3cce",
+  "workflow": ".github/workflows/wasm.yml",
+  "target": "web",
+  "wasm_pack": "0.13.1",
+  "files": {
+    "umath.js": "080bed7a7dd25bb3a61df59f865297facf80141469f9bc74423460024af99c62",
+    "umath.d.ts": "f4af6e8bae3311356d01a93d1091c0f72a901c40894b69b8cc3adf199fe9707c",
+    "umath_bg.wasm": "ae25a2bc50da148ea32afa8ba7c725c30478775b25e99590a92588e193d13151",
+    "umath_bg.wasm.d.ts": "0fd587cd7260fab1fe4e67f6c26d5b7a5e937ea35c0a76252643bab22b657dee",
+    "LICENSE": "8bb27670459027923124649be6582f3325a3ac9b1df5503130f2633a66f97938"
+  },
+  "build": {
+    "origin": "local",
+    "command": "wasm-pack build --release --target web --out-dir wasm-web --no-opt -- --locked --features wasm",
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "wasm_pack": "wasm-pack 0.13.1"
+  }
+}
