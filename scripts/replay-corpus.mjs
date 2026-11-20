@@ -30,6 +30,8 @@ import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { isDeepStrictEqual, parseArgs } from "node:util";
 import { parse } from "yaml";
+import { verifyLedger } from "./corpus-pin.mjs";
+import { model } from "./model-wire.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const { values: args, positionals } = parseArgs({
@@ -59,6 +61,7 @@ assert.ok(["strict", "parslet"].includes(args.compatibility), "--compatibility m
 assert.ok(["default", "deepest"].includes(args.reporter), "--reporter must be default or deepest");
 const policy = (options) => ({ ...options, compatibility: args.compatibility, reporter: args.reporter });
 const pin = JSON.parse(readFileSync(resolve(here, args.pin), "utf8"));
+verifyLedger(root, pin);
 const generation = resolve(root, pin.path);
 const sha = (bytes) => createHash("sha256").update(bytes).digest("hex");
 
@@ -115,19 +118,6 @@ function depth(node) {
   if ("array" in node) return 1 + node.array.reduce((m, x) => Math.max(m, depth(x)), 0);
   if ("node" in node) return 1 + node.fields.reduce((m, [, v]) => Math.max(m, depth(v)), 0);
   return 0;
-}
-// Ruby model wire ({node, fields}, nil fields left out) for a generated model.
-// Generation 4 rows name the model by the gem's earlier name Unicodemath.
-function model(v) {
-  if (v === null || v === undefined || typeof v === "symbol") return undefined;
-  if (typeof v === "string") return { str: v };
-  if (Array.isArray(v)) return { array: v.map(model) };
-  const name = v.constructor.name;
-  if (!name.startsWith("UmathModel")) throw new Error("not a generated model: " + name);
-  return {
-    node: "Umath::Model::" + name.slice(10),
-    fields: Object.entries(v).map(([k, x]) => [k, model(x)]).filter(([, x]) => x !== undefined),
-  };
 }
 function differs(kind, a, e) {
   let i = 0;
