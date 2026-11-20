@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { before, test } from "node:test";
+import { test } from "node:test";
 import { initialize } from "../dist/index.js";
 import { model } from "../scripts/model-wire.mjs";
 
@@ -8,8 +8,9 @@ import { model } from "../scripts/model-wire.mjs";
 // Fixture metadata records the testsuite revision, payload hashes and IDs.
 const fixture = JSON.parse(readFileSync(new URL("./fixtures/model-wire.json", import.meta.url), "utf8"));
 assert.ok(fixture.cases.length > 0, "focused oracle rows must not be empty");
-let stage;
-before(async () => { stage = await initialize(); });
+// Node 22.0 starts top-level tests before an async root before() hook settles.
+// Finish initialization before registering any parser-dependent tests.
+const stage = await initialize();
 for (const row of fixture.cases) test(`pinned Ruby model wire: ${row.id}`, () => {
   const expected = JSON.parse(JSON.stringify(row.expected.tree).replaceAll('"Unicodemath::Model::', '"Umath::Model::'));
   const actual = stage.parse(row.input.str, { ...row.options, compatibility: "parslet", reporter: "deepest" });
