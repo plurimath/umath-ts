@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { before, test } from 'node:test';
+import { test } from 'node:test';
 import { initialize, modelJson, Model } from '../dist/index.js';
 import { createWasmParser, RustWasmError, WASM_ASSET } from '../dist/wasm.js';
 const bytes = new Uint8Array(await readFile(new URL('../wasm/umath_bg.wasm', import.meta.url)));
-let ts;
-before(async () => { ts = await initialize(); });
+const ts = await initialize();
 test('Rust and TS portable models agree on focused accepted inputs', async () => {
   const parser = await createWasmParser(bytes);
   try {
