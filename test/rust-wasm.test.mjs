@@ -40,3 +40,16 @@ test('digest, option, Unicode, model refusals and parser disposal fail explicitl
     assert.match(WASM_ASSET.revision, /^[0-9a-f]{40}$/);
   } finally { parser.free(); other.free(); }
 });
+test('the frozen empty font model survives Rust writer round trips', async () => {
+  // Generation 5, unicode-external-167.model; keep the frozen row unchanged.
+  const input = "I(x,x') = g(x,x') [ε(x,x') + ∫_S▒ρ(x,x',x'')I(x',x'')ⅆx'']";
+  const expected = modelJson.encodeUmathModelDocument(ts.parse(input));
+  assert.ok(JSON.stringify(expected).includes('"mitBbb":{}'));
+  const parser = await createWasmParser(bytes);
+  try {
+    assert.deepEqual(JSON.parse(parser.parseJson(input)), expected);
+    const once = parser.serialize(JSON.stringify(expected));
+    assert.deepEqual(JSON.parse(once), expected);
+    assert.deepEqual(JSON.parse(parser.serialize(once)), expected);
+  } finally { parser.free(); }
+});
