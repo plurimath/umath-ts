@@ -1,0 +1,21 @@
+{
+  "repository": "plurimath/umath-rs",
+  "revision": "36c37ba6d62757c157929e5a0a00c3f318dc3dde",
+  "workflow": ".github/workflows/wasm.yml",
+  "target": "web",
+  "wasm_pack": "0.13.1",
+  "files": {
+    "umath.js": "080bed7a7dd25bb3a61df59f865297facf80141469f9bc74423460024af99c62",
+    "umath.d.ts": "f4af6e8bae3311356d01a93d1091c0f72a901c40894b69b8cc3adf199fe9707c",
+    "umath_bg.wasm": "93bf4cefc189b072189068cc38f9033a5356d33dc390e8e9e8071ac350c17caa",
+    "umath_bg.wasm.d.ts": "0fd587cd7260fab1fe4e67f6c26d5b7a5e937ea35c0a76252643bab22b657dee",
+    "LICENSE": "8bb27670459027923124649be6582f3325a3ac9b1df5503130f2633a66f97938"
+  },
+  "build": {
+    "origin": "github-actions",
+    "run_url": "https://github.com/plurimath/umath-rs/actions/runs/44757731367"
+  },
+  "run_id": 44757731367,
+  "artifact_id": 14639488021,
+  "artifact_name": "stage-wasm-node-web"
+}
